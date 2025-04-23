@@ -3,6 +3,8 @@ import OpenAI from "openai";
 
 // Netlify Functions는 기본적으로 handler 함수를 export해야 합니다
 export async function handler(event, context) {
+  console.log("Request path:", event.path); // 디버깅을 위한 로그 추가
+
   // CORS 헤더 설정
   const headers = {
     "Access-Control-Allow-Origin": "*",
@@ -12,9 +14,11 @@ export async function handler(event, context) {
 
   // GET 요청에 대한 기본 응답
   if (event.httpMethod === "GET") {
-    // 경로에서 마지막 부분만 추출
-    const pathParts = event.path.split("/");
-    const endpoint = pathParts[pathParts.length - 1];
+    // URL에서 /api/ 이후의 경로 추출
+    const pathSegments = event.path.split("/api/");
+    const endpoint = pathSegments.length > 1 ? pathSegments[1] : "";
+
+    console.log("Endpoint:", endpoint); // 디버깅을 위한 로그 추가
 
     if (endpoint === "OmoshiroikotoItte") {
       try {
@@ -33,7 +37,6 @@ export async function handler(event, context) {
           ],
         });
 
-        // 응답 데이터에서 일본어 텍스트를 올바르게 처리하기 위해 JSON을 명시적으로 처리
         const responseText = completion.choices[0].message.content;
 
         return {
@@ -42,6 +45,7 @@ export async function handler(event, context) {
           body: JSON.stringify(
             {
               message: responseText,
+              debug: { path: event.path, endpoint: endpoint },
             },
             null,
             2
@@ -52,7 +56,10 @@ export async function handler(event, context) {
         return {
           statusCode: 500,
           headers,
-          body: JSON.stringify({ error: "서버 오류가 발생했습니다: " + error.message }),
+          body: JSON.stringify({
+            error: "서버 오류가 발생했습니다: " + error.message,
+            debug: { path: event.path, endpoint: endpoint },
+          }),
         };
       }
     }
@@ -63,8 +70,7 @@ export async function handler(event, context) {
       headers,
       body: JSON.stringify({
         message: "Hello Netlify Functions!",
-        path: event.path,
-        endpoint: endpoint,
+        debug: { path: event.path, endpoint: endpoint },
       }),
     };
   }
@@ -73,6 +79,9 @@ export async function handler(event, context) {
   return {
     statusCode: 405,
     headers,
-    body: JSON.stringify({ error: "Method Not Allowed" }),
+    body: JSON.stringify({
+      error: "Method Not Allowed",
+      debug: { path: event.path },
+    }),
   };
 }
