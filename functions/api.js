@@ -26,8 +26,8 @@ export async function handler(event, context) {
           apiKey: process.env.OPENAI_API_KEY,
         });
 
-        const systemRole = "あなたは超一流コメディアンとしてふるまってください。";
-        const message = "何か面白いことを言ってください。";
+        const systemRole = "당신은 고대의 지혜를 지닌 마법사입니다. 마법의 주문과 신비로운 이야기를 통해 사람들에게 영감을 주는 역할을 합니다.";
+        const message = "나만의 특별한 마법 주문을 만들어주세요.";
 
         const completion = await openai.chat.completions.create({
           model: "gpt-4o",
