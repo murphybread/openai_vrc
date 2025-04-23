@@ -44,7 +44,7 @@ export async function handler(event, context) {
         const message = userMessage;
 
         const completion = await openai.chat.completions.create({
-          model: "gpt-4o",
+          model: "gpt-4o-mini",
           messages: [
             { role: "system", content: systemRole },
             { role: "user", content: message }, // 사용자의 입력으로 설정된 message 변수 사용
