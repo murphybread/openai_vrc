@@ -1,4 +1,4 @@
-// ES 모듈 방식을 위한 CommonJS 래퍼
+// ES 모듈 방식를 위한 CommonJS 래퍼
 import OpenAI from "openai";
 
 // Netlify Functions는 기본적으로 handler 함수를 export해야 합니다
@@ -12,7 +12,11 @@ export async function handler(event, context) {
 
   // GET 요청에 대한 기본 응답
   if (event.httpMethod === "GET") {
-    if (event.path === "/.netlify/functions/api/OmoshiroikotoItte") {
+    // 경로에서 마지막 부분만 추출
+    const pathParts = event.path.split("/");
+    const endpoint = pathParts[pathParts.length - 1];
+
+    if (endpoint === "OmoshiroikotoItte") {
       try {
         const openai = new OpenAI({
           apiKey: process.env.OPENAI_API_KEY,
@@ -57,7 +61,11 @@ export async function handler(event, context) {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ message: "Hello Netlify Functions!" }),
+      body: JSON.stringify({
+        message: "Hello Netlify Functions!",
+        path: event.path,
+        endpoint: endpoint,
+      }),
     };
   }
 
