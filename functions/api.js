@@ -45,7 +45,6 @@ export async function handler(event, context) {
           body: JSON.stringify(
             {
               message: responseText,
-              debug: { path: event.path, endpoint: endpoint },
             },
             null,
             2
