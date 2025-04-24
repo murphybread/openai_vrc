@@ -38,6 +38,7 @@ export async function handler(event) {
           { role: "system", content: SYSTEM_ROLE },
           { role: "user", content: userMessage },
         ],
+        max_completion_tokens: 350,
       });
       const text = res.choices[0].message.content;
 
