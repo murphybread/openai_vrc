@@ -1,0 +1,15 @@
+Benchmark started at 2025-04-24T04:11:00.287Z
+Request 1: 2209 ms | length: 113 chars | 19.55 ms/char
+Request 2: 3032 ms | length: 296 chars | 10.24 ms/char
+Request 3: 1809 ms | length: 99 chars | 18.27 ms/char
+Request 4: 2332 ms | length: 106 chars | 22.00 ms/char
+Request 5: 6152 ms | length: 554 chars | 11.10 ms/char
+Request 6: 3790 ms | length: 298 chars | 12.72 ms/char
+Request 7: 1668 ms | length: 128 chars | 13.03 ms/char
+Request 8: 7315 ms | length: 435 chars | 16.82 ms/char
+Request 9: 1354 ms | length: 100 chars | 13.54 ms/char
+Request 10: 3232 ms | length: 257 chars | 12.58 ms/char
+
+=== Summary over 10 runs ===
+Average response time: 3289.30 ms
+Average speed per char: 14.99 ms/char
