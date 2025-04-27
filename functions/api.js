@@ -41,7 +41,8 @@ export async function handler(event) {
   const endpoint = event.path.split("/api/")[1] || "";
   // 2.1) DALL·E3 작업 생성: GET /api/dalle3/create?userInput=...
   if (endpoint === "dalle3/create") {
-    const prefix = "Illustrate with a magical, ethereal art style: ";
+    const prefix =
+      "Imagine a illustrative scene that captures the pure essence of your input magic—using flowing lines, soft brush textures, and subtle glowing accents to convey its energy";
     const raw = event.queryStringParameters?.userInput;
     if (!raw) {
       return {
