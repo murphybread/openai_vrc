@@ -11,7 +11,14 @@ const HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type",
   "Content-Type": "application/json; charset=utf-8",
 };
+
 // ────────────────────────────────────────────────────────────────
+
+// 인메모리 작업 스토어
+const jobs = {};
+function generateJobId() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
 
 const ItemSchema = z.object({
   spell: z.string(),
@@ -32,6 +39,68 @@ export async function handler(event) {
 
   // 2) 엔드포인트 추출
   const endpoint = event.path.split("/api/")[1] || "";
+  // 2.1) DALL·E3 작업 생성: GET /api/dalle3/create?userInput=...
+  if (endpoint === "dalle3/create") {
+    const prefix = "Illustrate with a magical, ethereal art style: ";
+    const raw = event.queryStringParameters?.userInput;
+    if (!raw) {
+      return {
+        statusCode: 400,
+        headers: HEADERS,
+        body: JSON.stringify({ error: "Missing userInput parameter" }),
+      };
+    }
+    const prompt = prefix + decodeURIComponent(raw);
+    const jobId = generateJobId();
+    jobs[jobId] = { status: "pending" };
+    // 백그라운드로 이미지 생성 호출
+    (async () => {
+      try {
+        const res = await openai.images.generate({
+          model: "dall-e-3",
+          prompt,
+          quality: "standard",
+          n: 1,
+        });
+        jobs[jobId] = { status: "complete", url: res.data[0].url };
+      } catch (e) {
+        jobs[jobId] = { status: "error", error: e.message };
+      }
+    })();
+    return {
+      statusCode: 202,
+      headers: HEADERS,
+      body: JSON.stringify({ jobId }),
+    };
+  }
+
+  // 2.2) DALL·E3 작업 상태 조회: GET /api/dalle3/status?jobId=...
+  if (endpoint === "dalle3/status") {
+    const jobId = event.queryStringParameters?.jobId;
+    const job = jobs[jobId];
+    if (!job) {
+      return {
+        statusCode: 404,
+        headers: HEADERS,
+        body: JSON.stringify({ error: "Unknown jobId" }),
+      };
+    } else if (job.status !== "complete") {
+      return {
+        statusCode: 202,
+        headers: HEADERS,
+        body: JSON.stringify({ status: job.status }),
+      };
+    } else if (job.status === "complete") {
+      const imageUrl = job.url;
+      return {
+        statusCode: 302,
+        headers: {
+          ...HEADERS,
+          Location: imageUrl,
+        },
+      };
+    }
+  }
 
   // 3) OmoshiroikotoItte 전용 로직
   if (endpoint === "OmoshiroikotoItte") {
@@ -89,40 +158,6 @@ export async function handler(event) {
     } catch (err) {
       return {
         statusCode: 500,
-        headers: HEADERS,
-        body: JSON.stringify({ error: err.message }),
-      };
-    }
-  }
-
-  // 4) DALL·E 3 이미지 생성 엔드포인트: /api/dalle3
-  if (endpoint === "dalle3") {
-    const userInput = event.queryStringParameters?.userInput;
-    if (!userInput) {
-      return {
-        statusCode: 400,
-        headers: HEADERS,
-        body: JSON.stringify({ error: "Missing userInput parameter" }),
-      };
-    }
-    try {
-      const response = await openai.images.generate({
-        model: "dall-e-3",
-        prompt: userInput,
-        quality: "standard",
-        n: 1,
-      });
-      const imageUrl = response.data[0].url;
-      return {
-        statusCode: 302,
-        headers: {
-          ...HEADERS,
-          Location: imageUrl,
-        },
-      };
-    } catch (err) {
-      return {
-        statusCode: err.status || 500,
         headers: HEADERS,
         body: JSON.stringify({ error: err.message }),
       };
