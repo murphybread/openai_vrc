@@ -1,5 +1,7 @@
 // ES 모듈 방식
 import OpenAI from "openai";
+import { z } from "zod";
+import { zodResponseFormat } from "openai/helpers/zod";
 
 // ── 모듈 스코프(핫 스타트 시 재사용) ───────────────────────────────
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -10,6 +12,13 @@ const HEADERS = {
   "Content-Type": "application/json; charset=utf-8",
 };
 // ────────────────────────────────────────────────────────────────
+
+const ItemSchema = z.object({
+  spell: z.string(),
+  cost: z.number(),
+  description: z.string(),
+  damage: z.number(),
+});
 
 export async function handler(event) {
   // 1) GET 이외는 바로 거절
@@ -47,6 +56,35 @@ export async function handler(event) {
         headers: HEADERS,
         // pretty-print 제거 → 바이트·파싱 오버헤드 최소화
         body: JSON.stringify({ message: text }),
+      };
+    } catch (err) {
+      return {
+        statusCode: 500,
+        headers: HEADERS,
+        body: JSON.stringify({ error: err.message }),
+      };
+    }
+  }
+
+  // 3.5) Structured Outputs 엔드포인트: /api/structed
+  if (endpoint === "structed") {
+    const raw = event.queryStringParameters?.userInput;
+    const userMessage = raw ? decodeURIComponent(raw) : "나만의 특별한 마법 주문을 만들어주세요.";
+
+    try {
+      const completion = await openai.beta.chat.completions.parse({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: "Please output a JSON object with a single field `spell` containing your magic incantation." },
+          { role: "user", content: userMessage },
+        ],
+        response_format: zodResponseFormat(ItemSchema, "magic"),
+      });
+
+      return {
+        statusCode: 200,
+        headers: HEADERS,
+        body: JSON.stringify(completion.choices[0].message.parsed),
       };
     } catch (err) {
       return {
