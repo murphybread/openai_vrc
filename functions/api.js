@@ -92,13 +92,17 @@ export async function handler(event) {
         body: JSON.stringify({ status: job.status }),
       };
     } else if (job.status === "complete") {
-      const imageUrl = job.url;
+      const resp = await fetch(job.url);
+      const buffer = await resp.arrayBuffer();
+      const base64 = Buffer.from(buffer).toString("base64");
+
       return {
-        statusCode: 302,
+        statusCode: 200,
+        isBase64Encoded: true,
         headers: {
-          ...HEADERS,
-          Location: imageUrl,
+          "Content-Type": "image/png",
         },
+        body: base64, // Base64 인코딩된 PNG 데이터
       };
     }
   }
