@@ -95,7 +95,41 @@ export async function handler(event) {
     }
   }
 
-  // 4) 그 외 엔드포인트 (루트 응답)
+  // 4) DALL·E 3 이미지 생성 엔드포인트: /api/dalle3
+  if (endpoint === "dalle3") {
+    const userInput = event.queryStringParameters?.userInput;
+    if (!userInput) {
+      return {
+        statusCode: 400,
+        headers: HEADERS,
+        body: JSON.stringify({ error: "Missing userInput parameter" }),
+      };
+    }
+    try {
+      const response = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: userInput,
+        quality: "standard",
+        n: 1,
+      });
+      const imageUrl = response.data[0].url;
+      return {
+        statusCode: 302,
+        headers: {
+          ...HEADERS,
+          Location: imageUrl,
+        },
+      };
+    } catch (err) {
+      return {
+        statusCode: err.status || 500,
+        headers: HEADERS,
+        body: JSON.stringify({ error: err.message }),
+      };
+    }
+  }
+
+  // 5) 그 외 엔드포인트 (루트 응답)
   return {
     statusCode: 200,
     headers: HEADERS,
